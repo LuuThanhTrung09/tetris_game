@@ -251,7 +251,7 @@ function moveTetromino(direction) {
     setTimeout(() => { isKeyPressed = false; }, 100);
 }
 
-// Ensure lockTetromino triggers row clearing correctly
+// Ensure lockTetromino calls clearFullRows correctly
 function lockTetromino() {
     if (!activeTetromino) return;
     
@@ -265,7 +265,6 @@ function lockTetromino() {
         }
     }
     
-    // Clear rows immediately after locking
     const cleared = clearFullRows();
     if (cleared > 0) {
         console.log("Rows cleared after lock:", cleared);
@@ -275,19 +274,24 @@ function lockTetromino() {
 // Function to check and clear full rows
 function clearFullRows() {
     let rowsCleared = 0;
-    
-    // Check each row from bottom to top
-    for (let row = BOARD_HEIGHT - 1; row >= 0; row--) {
-        // Log the row contents for debugging
+    let rowsToClear = [];
+
+    // First, identify all full rows
+    for (let row = 0; row < BOARD_HEIGHT; row++) {
         console.log(`Checking row ${row}:`, board[row]);
-        
-        // Check if the row is full (no 0s)
         const isFull = board[row].every(cell => cell !== 0);
         if (isFull) {
-            console.log(`Row ${row} is full, clearing...`);
-            rowsCleared++;
-            
-            // Remove all blocks in this row from the DOM
+            console.log(`Row ${row} is full`);
+            rowsToClear.push(row);
+        }
+    }
+
+    // Clear all identified full rows
+    if (rowsToClear.length > 0) {
+        rowsCleared = rowsToClear.length;
+
+        // Remove DOM blocks for all full rows
+        for (let row of rowsToClear) {
             for (let col = 0; col < BOARD_WIDTH; col++) {
                 const blockId = `block-${row}-${col}`;
                 const block = document.getElementById(blockId);
@@ -297,19 +301,19 @@ function clearFullRows() {
                     console.log(`Block not found in DOM: ${blockId}`);
                 }
             }
-            
-            // Remove the row and shift everything down
+        }
+
+        // Remove full rows from the board and shift down
+        for (let row of rowsToClear.sort((a, b) => b - a)) { // Sort descending to remove from bottom up
             board.splice(row, 1);
             board.unshift(Array(BOARD_WIDTH).fill(0));
-            row++; // Re-check the same position after shifting
         }
-    }
-    
-    if (rowsCleared > 0) {
+
         console.log(`Cleared ${rowsCleared} rows`);
         redrawBoard();
     }
-    return rowsCleared; // Useful for scoring if you add it later
+
+    return rowsCleared;
 }
 
 // Function to redraw the entire board after clearing
